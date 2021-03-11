@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { classNames } from "utils/classNames";
 import {
   CANVAS_HEIGHT,
@@ -10,8 +10,19 @@ import NumberFormat from 'react-number-format';
 import { rouletteService } from "service/rouletteService";
 import { delay } from "utils/delay";
 import { notNull } from "utils/notNull";
+import { uuidv4 } from "utils/uuid";
+import { ROULETTE_VALUE_TO_COLOR } from "./RouletteGameValues";
+
+const GAME_HISTORY_LS_KEY = 'RouletteGameHistory-LSKEY';
 
 type SelectedColor = null | 'red' | 'black';
+
+interface RouletteGameHistoryEntry {
+  uuid: string,
+  color: SelectedColor,
+  betStakeValue: number,
+  won: boolean,
+}
 
 export function RouletteGameComponent() {
   const reqAnimmId = useRef(-1);
@@ -37,6 +48,16 @@ export function RouletteGameComponent() {
   const [stakeValue, setStakeValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [betHistory, setBetHistory] = useState<Array<RouletteGameHistoryEntry>>([]);
+
+  useEffect(() => {
+    setBetHistory(loadBetHistory());
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(GAME_HISTORY_LS_KEY, JSON.stringify(betHistory, null, 2));
+  }, [betHistory]);
+
   const isFormInvalid = !(stakeValue > 0 && selectedColor !== null);
 
   const handleColorSelectClick = (color: SelectedColor) => (_: any) => {
@@ -45,7 +66,7 @@ export function RouletteGameComponent() {
 
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isFormInvalid) return;
 
     setIsSubmitting(true);
     const game = notNull(gameRenderer.current, 'gameRenderer');
@@ -57,12 +78,18 @@ export function RouletteGameComponent() {
         rouletteService.getRoll()
       ]);
       const coolOff = game.settleRoll(settledOn.value);
+      const won = ROULETTE_VALUE_TO_COLOR[settledOn.value] === selectedColor;
       await delay(coolOff);
+
+      setBetHistory(history => [...history, { betStakeValue: stakeValue, color: selectedColor, won, uuid: uuidv4() }]);
+
     } catch (e) {
       // todo: let the user know or pipe it over to some error handling system
       console.error(e);
     } finally {
       setIsSubmitting(false);
+      setStakeValue(0);
+      setSelectedColor(null);
     }
 
     return false;
@@ -81,6 +108,7 @@ export function RouletteGameComponent() {
         </span>
         <div className={styles.betMenuInputs}>
           <button
+            type="button"
             className={classNames(
               styles.betMenuInputBtn,
               styles.betMenuBlackBtn,
@@ -91,6 +119,7 @@ export function RouletteGameComponent() {
             black
           </button>
           <button
+            type="button"
             className={
               classNames(
                 styles.betMenuInputBtn,
@@ -123,6 +152,31 @@ export function RouletteGameComponent() {
           GO!
         </button>
       </form>
+      <div>
+        <div>
+          history: 
+          <table>
+            <thead>
+              <tr>
+                <th>won?</th>
+                <th>stake</th>
+                <th>color</th>
+              </tr>
+            </thead>
+            <tbody>
+              {betHistory.map(betHistoryEntry => {
+                return (
+                  <tr key={betHistoryEntry.uuid}>
+                    <td>{betHistoryEntry.won ? 'WON' : 'LOST'}</td>
+                    <td>${betHistoryEntry.betStakeValue}</td>
+                    <td>{selectedColorToText(betHistoryEntry.color)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
@@ -136,5 +190,15 @@ function selectedColorToText(color: SelectedColor) {
       return 'black';
     case 'red':
       return 'red';
+  }
+}
+
+
+function loadBetHistory(): Array<RouletteGameHistoryEntry> {
+  let entry = window.localStorage.getItem(GAME_HISTORY_LS_KEY);
+  if (entry !== null) {
+    return JSON.parse(entry);
+  } else {
+    return [];
   }
 }

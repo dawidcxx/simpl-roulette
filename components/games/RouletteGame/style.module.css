@@ -1,0 +1,86 @@
+.wrapper {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.betMenu {
+    display: flex;
+    flex-flow: column nowrap;
+    font-size: 16px;
+    border: 1px solid white;
+    padding: 16px;
+}
+
+.betMenuHeader {
+    font-size: 18px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.betMenuInputs {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    margin-bottom: 12px;
+}
+
+.betMenuInputBtn {
+    padding: 8px 12px;
+    width: 100%;
+    margin-right: 12px;
+    text-transform: uppercase;
+    font-size: 16px;
+    color: white;
+    border: none;
+    font-weight: bold;
+}
+
+.betMenuInputBtn:focus, .betMenuInputValueInpt:focus {
+    outline: 2px solid #999;
+}
+
+.betMenuRedBtn.selected, .betMenuBlackBtn.selected {
+    outline: 4px dotted gold;
+}
+
+.betMenuBlackBtn {
+    background-color: #101010;
+    border: none;
+}
+
+.betMenuRedBtn {
+    background-color: #d50000;
+}
+
+.betMenuInputValueInpt {
+    width: 120px;
+    background-color: transparent;
+    outline: none;
+    border: none;
+    border-bottom: 1px solid #eee;
+    font-size: 21px;
+    color: #85bb65;
+}
+
+.betMenuInputValueInpt:after {
+    content: "$";
+    display: block;
+}
+
+.betMenuSubmitBtn {
+    background-color: transparent;
+    border: 3px solid #aaa;
+}
+
+.betMenuSubmitBtn:focus {
+    outline: none;
+    border: 3px solid #fff;
+}
+
+.betMenuSubmitBtn:active {
+    background-color: #111;
+}
